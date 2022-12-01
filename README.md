@@ -70,18 +70,12 @@ TensorBoard可视化如下（用Coarse Net作为例子）
 体渲染方程如下：
 
 $$
-C(\boldsymbol{r})=\begin{equation}
+C(\boldsymbol{r})=
 \int_{t_n}^{t_f} 
-\exp(-\begin{equation}
-\int_{t_n}^{t} 
-\sigma(\boldsymbol{r}(s)) 
-\,\mathrm{d}s
-\end{equation}
-)
+\exp\big({-\int_{t_n}^{t} {\sigma(\boldsymbol{r}(s))}\ \mathrm{d}s}\big)
 \sigma(\boldsymbol{r}(t))
-\boldsymbol{c}(\boldsymbol{r}(t),\boldsymbol{d}) 
-\,\mathrm{d}z
-\end{equation}
+\boldsymbol{c}(\boldsymbol{r}(t),\boldsymbol{d})
+\ \mathrm{d}z
 $$
 
 
