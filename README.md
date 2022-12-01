@@ -37,7 +37,7 @@ opencv-python
 
 ## 数据集介绍
 
-数据集为官方提供数据集 $lego$ ，在该项目的`./data/nerf_synthetic/lego/*`目录下；该目录下包含三个文件夹和三个json文件，分别表示训练集`train`、验证集`val`、测试集`test`；json文件中`camera_angle_x`参数表示的是$fov_x$，`file_path`参数表示对应图像所在目录，`transform_matrix`表示相机坐标与世界坐标的坐标变换矩阵，在生成光线做Camera Ray Casting时需要用到。
+数据集为官方提供数据集 $lego$ ，在该项目的`./data/nerf_synthetic/lego/*`目录下；该目录下包含三个文件夹和三个json文件，分别表示训练集`train`、验证集`val`、测试集`test`；json文件中`camera_angle_x`参数表示的是 $fov_x$ ，`file_path`参数表示对应图像所在目录，`transform_matrix`表示相机坐标与世界坐标的坐标变换矩阵，在生成光线做Camera Ray Casting时需要用到。
 
 为了提高模型训练速率以及防止显存不足，对原始数据集做了一定的修改，即将 $800\times800\times4$ 的图像resize成了 $400\times400\times3$ 的图像。
 
