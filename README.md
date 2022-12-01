@@ -58,7 +58,7 @@ $$ </br>
 总的数据传递过程如下（源码详情见`nerf.py`模块的`NeRF`类）。其中输入 $p(x,y,z,d_x,d_y,d_z)$ 表示世界坐标系下的空间坐标 $(x,y,z)$ 以及视角方向 $(d_x,d_y,d_z)=(\theta,\phi)$ ，输出为该点体素 $(r,g,b,density)$ ，**注意输出的 $(r,g,b)$ 并不是最终该像素的颜色，最终生成图像的像素颜色需要通过体渲染器计算体渲染方程得到**
 
 $$
-p(x,y,z,d_x,d_y,d_z)\stackrel{Encoder}{\Longrightarrow}(p,\sin(2^0\pi{p}),\cos(2^0\pi{p}),\cdots,\sin(2^{L-1}\pi{p}),\cos(2^{L-1}\pi{p}))\stackrel{Coarse\,or\,{Fine}}{\Longrightarrow}{(r,g,b,\sigma)}
+p(x,y,z,d_x,d_y,d_z)\stackrel{Encoder}{\Longrightarrow}(p,\sin(2^0\pi{p}),\cos(2^0\pi{p}),\cdots,\sin(2^{L-1}\pi{p}),\cos(2^{L-1}\pi{p}))\stackrel{Coarse\ Net\ or\ {Fine\ Net}}{\Longrightarrow}{(r,g,b,\sigma)}
 $$
 
 TensorBoard可视化如下（用Coarse Net作为例子）
