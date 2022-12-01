@@ -113,6 +113,7 @@ $$
 <img src="https://github.com/mofashaoye/2020-ECCV-NeRF/blob/main/out/other_imgs/losses.gif"></img>
 
 图像渲染变化（可视化训练过程中生成的日志文件`./out/imgs/*`）
+
 <img src="https://github.com/mofashaoye/2020-ECCV-NeRF/blob/main/out/other_imgs/train_img.gif"></img>
 
 显卡利用率
