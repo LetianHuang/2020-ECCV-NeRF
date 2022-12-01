@@ -2,7 +2,7 @@
 
 ## 论文原文
 
-[2020 ECCV *NeRF: Representing Scenes as Neural Radiance Fields for View Synthesis*](paper\NeRF.pdf) 
+[2020 ECCV *NeRF: Representing Scenes as Neural Radiance Fields for View Synthesis*](./paper/NeRF.pdf) 
 
 ## 项目简介
 
