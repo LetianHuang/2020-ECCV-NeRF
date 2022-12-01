@@ -101,16 +101,16 @@ $$
 
 训练总时长约 $8\sim9$ 小时。
 
-损失函数变化图像（可视化训练过程中生成的日志文件`./out/logs.txt`）
+**损失函数变化图像（可视化训练过程中生成的日志文件`./out/logs.txt`）**
 <font size=2>最初的若干个epoch因为刚开始训练且选取图像中心部分进行拟合，因此损失函数下降的十分迅速；之后之所以训练过程中会产生损失函数波动情况是因为每次迭代是随机选一张图像，并从该图像中随机选batch size个像素点做的训练；随着迭代次数增加波动的振幅越来越小，损失函数趋于收敛</font>
 
 <img src="https://github.com/mofashaoye/2020-ECCV-NeRF/blob/main/out/other_imgs/losses.gif"></img>
 
-图像渲染变化（可视化训练过程中生成的日志文件`./out/imgs/*`）
+**图像渲染变化（可视化训练过程中生成的日志文件`./out/imgs/*`）**
 
 <img src="https://github.com/mofashaoye/2020-ECCV-NeRF/blob/main/out/other_imgs/train_img.gif"></img>
 
-显卡利用率
+**显卡利用率**
 <font size=2>由于代码实现最开始就将很多数据迁移到了GPU且很多运算都是矩阵运算，利于GPU并行，因此显卡利用率还不错；不过带来的问题是显存要求较高</font>
 
 <img src="https://github.com/mofashaoye/2020-ECCV-NeRF/blob/main/out/other_imgs/gpu.png"> </img>
