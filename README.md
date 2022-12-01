@@ -33,7 +33,7 @@ opencv-python
 
 通过 $360^{\circ}$ 全方位体渲染展示训练好的辐射场模型（一种隐式的几何表示）
 
-<img src="https://github.com/mofashaoye/2020-ECCV-NeRF/blob/main/out/other_imgs/render.gif">
+<video src="https://github.com/mofashaoye/2020-ECCV-NeRF/blob/main/out/other_imgs/render_60.mp4">
 
 ## 数据集介绍
 
