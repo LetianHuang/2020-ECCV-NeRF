@@ -72,7 +72,7 @@ TensorBoard可视化如下（用Coarse Net作为例子）
 $$
 C(\boldsymbol{r})=
 \int_{t_n}^{t_f} 
-\exp\big({-\int_{t_n}^{t} {\sigma(\boldsymbol{r}(s))}\ \mathrm{d}s}\big)
+\exp\Big({-\int_{t_n}^{t} {\sigma(\boldsymbol{r}(s))}\ \mathrm{d}s}\Big)
 \sigma(\boldsymbol{r}(t))
 \boldsymbol{c}(\boldsymbol{r}(t),\boldsymbol{d})
 \ \mathrm{d}z
