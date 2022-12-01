@@ -96,7 +96,7 @@ $$
 总共训练了 $200000$ 个epoch，优化器采用的Adam优化器，学习率采用的官方的 $0.0005$ ，且会因为迭代次数增加减小学习率，损失函数即为均方损失函数。
 
 $$
-L=\sum\limits_{\boldsymbol{r}\in{R}}[\Vert{\hat{C}_c(\boldsymbol{r})-C(\boldsymbol{r})}\Vert_2^2+\Vert{\hat{C}_f(\boldsymbol{r})-C(\boldsymbol{r})}\Vert_2^2]
+L=\sum\limits_{\boldsymbol{r}\in{R}}\Big[\Vert{\hat{C}_c(\boldsymbol{r})-C(\boldsymbol{r})}\Vert_2^2+\Vert{\hat{C}_f(\boldsymbol{r})-C(\boldsymbol{r})}\Vert_2^2\Big]
 $$
 
 训练总时长约 $8\sim9$ 小时。
