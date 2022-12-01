@@ -132,11 +132,6 @@ class VolumeRenderer:
             ], dim=-1),
             camera2world[:3, :3].t()
         )
-        # rays_d = torch.sum(torch.stack([
-        #     (i - 0.5 * self.width) / self.focal,
-        #     -(j - 0.5 * self.height) / self.focal,
-        #     -torch.ones_like(i, device=self.device)
-        # ], dim=-1)[..., None, :] * camera2world[:3, :3], dim=-1)
         # Camera's World Coordinate
         rays_o = camera2world[:3, -1].expand(rays_d.shape)
         return rays_o, rays_d
@@ -213,15 +208,6 @@ class VolumeRenderer:
             dim=-2,  # num_samples
             keepdim=False
         )  # [num_rays, 3]
-        # depth_map = torch.sum(
-        #     w_i * t_vals,
-        #     dim=-1,  # num_samples,
-        #     keepdim=False
-        # )  # [num_rays]
-        # disparity_map = 1.0 / torch.max(
-        #     torch.full_like(depth_map, fill_value=1e-10, device=self.device),
-        #     depth_map / torch.sum(w_i, dim=-1, keepdim=False)
-        # )  # [num_rays]
         acc_opacity_map = torch.sum(w_i, dim=-1, keepdim=False)
 
         pdf_map = w_i[..., 1:-1] + 1e-5  # prevent nans
@@ -236,9 +222,6 @@ class VolumeRenderer:
 
         return dict(
             rgb_map=rgb_map,
-            # depth_map=depth_map,
-            # disparity_map=disparity_map,
-            # acc_opacity_map=acc_opacity_map,
             cdf_map=cdf_map
         )
 
@@ -400,15 +383,16 @@ class VolumeRenderer:
         if use_tqdm:
             for epoch in tqdm.trange(0, self.height * self.width, render_batch_size):
                 coords = get_screen_batch(
-                    self.height, self.width, render_batch_size, epoch, device=self.device)
+                    self.height, self.width, render_batch_size, epoch, device=self.device
+                )
                 _, image_fine = self.render(pose, select_coords=coords)
                 img_block_list.append(image_fine.detach().cpu())
         else:
             for epoch in range(0, self.height * self.width, render_batch_size):
                 coords = get_screen_batch(
-                    self.height, self.width, render_batch_size, epoch, device=self.device)
+                    self.height, self.width, render_batch_size, epoch, device=self.device
+                )
                 _, image_fine = self.render(pose, select_coords=coords)
                 img_block_list.append(image_fine.detach().cpu())
-        img = np.concatenate(img_block_list, axis=0)[:self.height * self.width].reshape(
-            self.height, self.width, 3)
+        img = np.concatenate(img_block_list, axis=0)[:self.height * self.width].reshape(self.height, self.width, 3)
         return img
