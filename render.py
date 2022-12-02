@@ -240,7 +240,7 @@ class VolumeRenderer:
         Inputs:
             rays: (rays_o, rays_d) tuple[tensor, tensor]
             t_vals: tensor [num_rays, num_samples] t of the result of uniform sampling (the function `_sample`)
-            cdf: tensor [num_rays, num_samples - 1] CDF map (Cumulative Distribution Function)
+            cdf_map: tensor [num_rays, num_samples - 1] CDF map (Cumulative Distribution Function)
         Output:
             pos_locs: tensor [num_rays, num_samples + num_isamples, 3]  spatial locations used for the input of Fine Net
             t_vals: tensor [num_rays, num_samples + num_isamples] t of sampling and hierarchical sampling
