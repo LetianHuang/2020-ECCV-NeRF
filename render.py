@@ -132,6 +132,11 @@ class VolumeRenderer:
             ], dim=-1),
             camera2world[:3, :3].t()
         )
+        # rays_d = torch.sum(torch.stack([
+        #     (i - 0.5 * self.width) / self.focal,
+        #     -(j - 0.5 * self.height) / self.focal,
+        #     -torch.ones_like(i, device=self.device)
+        # ], dim=-1)[..., None, :] * camera2world[:3, :3], dim=-1)
         # Camera's World Coordinate
         rays_o = camera2world[:3, -1].expand(rays_d.shape)
         return rays_o, rays_d
@@ -165,8 +170,7 @@ class VolumeRenderer:
                 device=self.device
             )
             t = t.expand((*rays_o.shape[:-1], self.num_samples))
-        pos_locs = rays_o[..., None, :] + \
-            rays_d[..., None, :] * t[..., :, None]
+        pos_locs = rays_o[..., None, :] + rays_d[..., None, :] * t[..., :, None]
         # [num_rays, num_samples, 3]
 
         return pos_locs, t
@@ -182,7 +186,7 @@ class VolumeRenderer:
         Output:
             rbg_map and cdf_map
             rbg_map: tensor [num_rays, 3]               RGB map of the rendering scene
-            cdf_map: tensor [num_rays, num_samples + 1] CDF map (Cumulative Distribution Function)
+            cdf_map: tensor [num_rays, num_samples - 1] CDF map (Cumulative Distribution Function)
         """
         t_delta = t_vals[..., 1:] - t_vals[..., :-1]
         t_delta = torch.cat(
@@ -190,27 +194,27 @@ class VolumeRenderer:
                 [1e10], device=self.device).expand_as(t_delta[..., :1])),
             dim=-1
         )  # [num_rays, num_samples]
-        t_delta = t_delta * torch.norm(rays_d[..., None, :], dim=-1)
-        # [num_rays, num_samples, 3]
-        c_i = torch.sigmoid(voxels[..., :3])
-        # [num_rays, num_samples]
+        c_i = torch.sigmoid(voxels[..., :3]) # [num_rays, num_samples, 3]
         alpha_i = 1 - torch.exp(-torch.relu(voxels[..., 3]) * t_delta)
+        # exp(a + b) == exp(a) * exp(b)
         w_i = alpha_i * torch.cumprod(
             torch.cat(
-                (torch.ones(
-                    (*alpha_i.shape[:-1], 1), device=self.device), 1.0 - alpha_i + 1e-10),
+                (torch.ones((*alpha_i.shape[:-1], 1), device=self.device), 1.0 - alpha_i + 1e-10),
                 dim=-1
             ),
             dim=-1
-        )[:, :-1]  # [num_rays, num_samples]
+        )[:, :-1]  
+        # [:, :-1]   [num_rays, num_samples + 1] => [num_rays, num_samples]
         rgb_map = torch.sum(
-            w_i[..., None] * c_i,
+            w_i[..., None] * c_i, # [num_rays, num_samples, 1] * [num_rays, num_samples, 3]
             dim=-2,  # num_samples
             keepdim=False
         )  # [num_rays, 3]
-        acc_opacity_map = torch.sum(w_i, dim=-1, keepdim=False)
-
-        pdf_map = w_i[..., 1:-1] + 1e-5  # prevent nans
+        
+        # Normalizing these weights as ˆwi = wi/∑Ncj=1 wj 
+        # produces a piecewise-constant PDF along the ray. **5.2**
+        pdf_map = w_i[..., 1:-1] + 1e-5  
+        # prevent nans
         pdf_map = pdf_map / torch.sum(pdf_map, -1, keepdim=True)
         cdf_map = torch.cumsum(pdf_map, dim=-1)
         cdf_map = torch.cat(
@@ -218,24 +222,25 @@ class VolumeRenderer:
         )
 
         if self.background_w:
-            rgb_map = rgb_map + (1.0 - acc_opacity_map[..., None])
+            rgb_map = rgb_map + (1.0 - torch.sum(w_i, dim=-1, keepdim=False)[..., None])
 
         return dict(
             rgb_map=rgb_map,
             cdf_map=cdf_map
         )
 
-    def _hierarchical_sample(self, rays, t_vals: torch.Tensor, cdf: torch.Tensor):
+    def _hierarchical_sample(self, rays, t_vals: torch.Tensor, cdf_map: torch.Tensor):
         """
         Hierarchical volume sampling in paper
         =====================================
         **We sample a second set of Nf locations from this distribution
         using inverse transform sampling, evaluate our “fine” network at the union of the
         first and second set of samples, and compute the final rendered color of the ray Cf (r) using Eqn. 3 but using all Nc + Nf samples.**
+        Follow the official approach. 
         Inputs:
             rays: (rays_o, rays_d) tuple[tensor, tensor]
             t_vals: tensor [num_rays, num_samples] t of the result of uniform sampling (the function `_sample`)
-            cdf: tensor [num_rays, num_samples + 1] CDF map (Cumulative Distribution Function)
+            cdf: tensor [num_rays, num_samples - 1] CDF map (Cumulative Distribution Function)
         Output:
             pos_locs: tensor [num_rays, num_samples + num_isamples, 3]  spatial locations used for the input of Fine Net
             t_vals: tensor [num_rays, num_samples + num_isamples] t of sampling and hierarchical sampling
@@ -243,35 +248,27 @@ class VolumeRenderer:
         rays_o, rays_d = rays
         t_vals_mid = (t_vals[..., :-1] + t_vals[..., 1:]) * 0.5
 
-        u = torch.rand(
-            (*cdf.shape[:-1], self.num_isamples),
-            device=self.device
-        ).contiguous()
-        inds = torch.searchsorted(cdf, u, right=True)
-        below = torch.max(torch.zeros_like(inds-1, device=self.device), inds-1)
-        above = torch.min(
-            (cdf.shape[-1]-1) * torch.ones_like(inds, device=self.device), inds)
-        inds_g = torch.stack([below, above], -1)
-        matched_shape = [inds_g.shape[0], inds_g.shape[1], cdf.shape[-1]]
-        cdf_g = torch.gather(cdf.unsqueeze(1).expand(matched_shape), 2, inds_g)
-        bins_g = torch.gather(t_vals_mid.unsqueeze(
-            1).expand(matched_shape), 2, inds_g)
-        denom = (cdf_g[..., 1]-cdf_g[..., 0])
-        denom = torch.where(
-            denom < 1e-5, torch.ones_like(denom, device=self.device), denom)
-        t = (u-cdf_g[..., 0])/denom
-        samples = bins_g[..., 0] + t * (bins_g[..., 1]-bins_g[..., 0])
-        samples = samples.detach()
+        u = torch.rand((*cdf_map.shape[:-1], self.num_isamples), device=self.device).contiguous()
+        index = torch.searchsorted(cdf_map, u, right=True) # [num_rays, num_isamples] find > u
+        index = torch.stack((
+            torch.max(torch.zeros_like(index, device=self.device), index - 1), 
+            torch.min(torch.full_like(index, fill_value=(cdf_map.shape[-1] - 1) * 1.0, device=self.device), index) 
+            ), dim=-1)
+        shape_m = [index.shape[0], index.shape[1], cdf_map.shape[-1]]
+        cdf_map_gather = torch.gather(cdf_map.unsqueeze(1).expand(shape_m), dim=2, index=index)
+        t_vals_gather = torch.gather(t_vals_mid.unsqueeze(1).expand(shape_m), dim=2, index=index)
+        denom = cdf_map_gather[..., 1] - cdf_map_gather[..., 0]
+        denom = torch.where(denom < 1e-5, torch.ones_like(denom, device=self.device), denom)
+        t_vals_fine = (t_vals_gather[..., 0] + (u - cdf_map_gather[..., 0]) / denom * (t_vals_gather[..., 1]-t_vals_gather[..., 0])).detach()
 
-        t_vals, _ = torch.sort(torch.cat([t_vals, samples], -1), -1)
+        t_vals, _ = torch.sort(torch.cat([t_vals, t_vals_fine], -1), -1)
 
-        pos_locs = rays_o[..., None, :] + \
-            rays_d[..., None, :] * t_vals[..., :, None]
+        pos_locs = rays_o[..., None, :] + rays_d[..., None, :] * t_vals[..., :, None]
         # [num_rays, num_samples + num_isamples, 3]
 
         return pos_locs, t_vals
 
-    def _cast_rays(self, rays, view_dirs):
+    def _cast_rays(self, rays):
         """
         Rays Casting
         ============
@@ -291,6 +288,7 @@ class VolumeRenderer:
             rgb map of [2] and [5]
         """
         rays_o, rays_d = rays
+        view_dirs = rays_d
 
         coarse_nerf_locs, t_coarse = self._sample((rays_o, rays_d))
         coarse_voxels = self._voxel_sample5d(
@@ -346,19 +344,17 @@ class VolumeRenderer:
             rays_d = rays_d[select_coords[..., 0], select_coords[..., 1]]
 
         rays_o, rays_d = rays_o.reshape(-1, 3), rays_d.reshape(-1, 3)
-
-        view_dirs = (rays_d / torch.norm(rays_d, dim=-1, keepdim=True)).float()
-        # rays_d = rays_d / torch.norm(rays_d, dim=-1, keepdim=True)
+        rays_d = rays_d / torch.norm(rays_d, dim=-1, keepdim=True)
 
         if self.ray_chunk is None or self.ray_chunk <= 1:
-            return self._cast_rays((rays_o, rays_d), view_dirs)
+            return self._cast_rays((rays_o, rays_d))
 
         coarse_result, fine_result = [], []
 
         for i in range(0, rays_o.shape[0], self.ray_chunk):
             j = i + self.ray_chunk
 
-            c, f = self._cast_rays((rays_o[i:j], rays_d[i:j]), view_dirs[i:j])
+            c, f = self._cast_rays((rays_o[i:j], rays_d[i:j]))
             coarse_result.append(c)
             fine_result.append(f)
 
@@ -382,16 +378,12 @@ class VolumeRenderer:
         pose = torch.tensor(pose, device=self.device)
         if use_tqdm:
             for epoch in tqdm.trange(0, self.height * self.width, render_batch_size):
-                coords = get_screen_batch(
-                    self.height, self.width, render_batch_size, epoch, device=self.device
-                )
+                coords = get_screen_batch(self.height, self.width, render_batch_size, epoch, device=self.device)
                 _, image_fine = self.render(pose, select_coords=coords)
                 img_block_list.append(image_fine.detach().cpu())
         else:
             for epoch in range(0, self.height * self.width, render_batch_size):
-                coords = get_screen_batch(
-                    self.height, self.width, render_batch_size, epoch, device=self.device
-                )
+                coords = get_screen_batch(self.height, self.width, render_batch_size, epoch, device=self.device)
                 _, image_fine = self.render(pose, select_coords=coords)
                 img_block_list.append(image_fine.detach().cpu())
         img = np.concatenate(img_block_list, axis=0)[:self.height * self.width].reshape(self.height, self.width, 3)
