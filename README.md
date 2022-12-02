@@ -83,7 +83,13 @@ $$
 其中 $\mathbf{r}(t)=\mathbf{o}+t\mathbf{d}$ ，表示相机光线； $\mathbf{c}$ 和 $\sigma$ 为NeRF辐射场的输出，为关于三维坐标的函数，分别表示颜色和体密度； $t_n$ 和 $t_f$ 表示近远平面位置对应的 $t$ 。
 
 
-实际求解方程采用的是采样法，算法如下：
+实际求解方程采用的是采样法，离散化后的体渲染方程如下：
+
+$$
+\hat{C}(\mathbf{r})=\sum\limits_{i=1}^{N}{{\exp\left(-\sum\limits_{j=1}^{i-1}\sigma_j\left(t_{j+1}-t_j\right)\right)}{\left(1-\exp{\left(-\sigma_i\left(t_{i+1}-t_i\right)\right)}\right)}}{\mathbf{c_i}}
+$$
+
+具体算法如下：
 
 1. 生成光线。在 $[0,W-1]\times[0,H-1]$ 的屏幕空间中生成光线，并通过 $fov_x$ 和 $W$ 参数将屏幕坐标转换为相机坐标，再通过transform_matrix矩阵将相机坐标转为世界坐标，得到世界坐标系下的光束rays（对应项目中的`render.py`模块下`VolumeRenderer`类的`_generate_rays`方法）
 2. 在光线上均匀采样。在步骤1中生成的rays上均匀采样，获得 $N_s$ 个样本点（对应论文中的**4**，项目中的`render.py`模块下`VolumeRenderer`类的`_sample`方法）
