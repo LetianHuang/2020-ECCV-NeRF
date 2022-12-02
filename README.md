@@ -88,7 +88,7 @@ $$
 1. 生成光线。在 $[0,W-1]\times[0,H-1]$ 的屏幕空间中生成光线，并通过 $fov_x$ 和 $W$ 参数将屏幕坐标转换为相机坐标，再通过transform_matrix矩阵将相机坐标转为世界坐标，得到世界坐标系下的光束rays（对应项目中的`render.py`模块下`VolumeRenderer`类的`_generate_rays`方法）
 2. 在光线上均匀采样。在步骤1中生成的rays上均匀采样，获得 $N_s$ 个样本点（对应论文中的**4**，项目中的`render.py`模块下`VolumeRenderer`类的`_sample`方法）
 3. 采样点作为几何模型（NeRF coarse net）的输入获取体素信息。将步骤2中得到的采样点（包含视角方向）输入到NeRF几何模型coarse net中得到该采样点的体素（对应项目中`render.py`模块下`VolumeRenderer`类的`_voxel_sample5d`方法，该方法调用了`nerf.py`模块的`NeRF`模型的coarse_model）
-4. 求解体渲染方程。根据步骤3得到的体素，计算点积求解渲染方程，得到图像的像素值以及density的PDF（对应论文中的**4**，项目中`render.py`模块下`VolumeRenderer`类的`_parse_voxels`方法）
+4. 求解体渲染方程。根据步骤3得到的体素，计算点积求解渲染方程，得到图像的像素值以及PDF（对应论文中的**4**，项目中`render.py`模块下`VolumeRenderer`类的`_parse_voxels`方法）
 5. 在光线上重要性采样。根据4得到的PDF在rays上重要性采样，获得 $N_f$ 个样本点（对应论文中的**5.2**，项目中的`render.py`模块下`VolumeRenderer`类的`_hierarchical_sample`方法）
 6. 结合步骤2、5得到的采样点作为几何模型（NeRF fine net）的输入获取体素信息。（对应项目中`render.py`模块下`VolumeRenderer`类的`_voxel_sample5d`方法，该方法调用了`nerf.py`模块的`NeRF`模型的fine_model）
 7. 再此求解体渲染方程。根据步骤6得到的体素，计算点积求解渲染方程，得到图像的像素值，作为实际渲染的图像（对应论文中的**5.2**，项目中`render.py`模块下`VolumeRenderer`类的`_parse_voxels`方法）
