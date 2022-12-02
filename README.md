@@ -72,13 +72,15 @@ TensorBoard可视化如下（用Coarse Net作为例子）
 体渲染方程如下：
 
 $$
-C(\boldsymbol{r})=
+C(\mathbf{r})=
 \int_{t_n}^{t_f} 
-\exp\Big({-\int_{t_n}^{t} {\sigma(\boldsymbol{r}(s))}\ \mathrm{d}s}\Big)
-\sigma(\boldsymbol{r}(t))
-\boldsymbol{c}(\boldsymbol{r}(t),\boldsymbol{d})
-\ \mathrm{d}z
+\exp\Big({-\int_{t_n}^{t} {\sigma(\mathbf{r}(s))}\ \mathrm{d}s}\Big)
+\sigma(\mathbf{r}(t))
+\mathbf{c}(\mathbf{r}(t),\mathbf{d})
+\ \mathrm{d}t
 $$
+
+其中 $\mathbf{r}(t)=\mathbf{o}+t\mathbf{d}$ ，表示相机光线； $\mathbf{c}$ 和 $\sigma$ 为NeRF辐射场的输出，为关于三维坐标的函数，分别表示颜色和体密度； $t_n$ 和 $t_f$ 表示近远平面位置对应的 $t$ 。
 
 
 实际求解方程采用的是采样法，算法如下：
@@ -98,7 +100,7 @@ $$
 总共训练了 $200000$ 个epoch，优化器采用的Adam优化器，学习率采用的官方的 $0.0005$ ，且会因为迭代次数增加减小学习率，损失函数即为均方损失函数。
 
 $$
-L=\sum\limits_{\boldsymbol{r}\in{R}}\Big[\Vert{\hat{C}_c(\boldsymbol{r})-C(\boldsymbol{r})}\Vert_2^2+\Vert{\hat{C}_f(\boldsymbol{r})-C(\boldsymbol{r})}\Vert_2^2\Big]
+L=\sum\limits_{\mathbf{r}\in{R}}\Big[\big\Vert{\hat{C}_c(\mathbf{r})-C(\mathbf{r})}\big\Vert_2^2+\big\Vert{\hat{C}_f(\mathbf{r})-C(\mathbf{r})}\big\Vert_2^2\Big]
 $$
 
 训练总时长约 $8\sim9$ 小时。
