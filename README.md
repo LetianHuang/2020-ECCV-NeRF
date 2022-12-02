@@ -118,7 +118,7 @@ $$
 
 **图像渲染变化（可视化训练过程中生成的日志文件`./out/imgs/*`）**
 
-<img src="https://github.com/mofashaoye/2020-ECCV-NeRF/blob/main/out/other_imgs/train_img.gif" width=50%></img><img src="https://github.com/mofashaoye/2020-ECCV-NeRF/blob/main/data/nerf_synthetic/lego/train/r_0.png" width=50%></img>
+<img src="https://github.com/mofashaoye/2020-ECCV-NeRF/blob/main/data/nerf_synthetic/lego/train/r_0.png" width=50%></img><img src="https://github.com/mofashaoye/2020-ECCV-NeRF/blob/main/out/other_imgs/train_img.gif" width=50%></img>
 
 **显卡利用率**
 <font size=2>由于代码实现最开始就将很多数据迁移到了GPU且很多运算都是矩阵运算，利于GPU并行，因此显卡利用率还不错；不过带来的问题是显存要求较高</font>
