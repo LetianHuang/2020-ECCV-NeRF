@@ -11,6 +11,8 @@ import os
 
 import torch
 import tqdm
+from skimage.metrics import peak_signal_noise_ratio as PSNR
+from skimage.metrics import structural_similarity as SSIM
 from torch import nn
 
 import data_loader
@@ -18,7 +20,7 @@ import nerf
 import render
 
 ###################################################################
-# NeRF Testing Hyperparameter 
+# NeRF Testing Hyperparameter
 # (Use the same hyperparameters as the official implementation)
 ###################################################################
 # OS parameters
@@ -46,18 +48,25 @@ RAY_CHUNK = 32768
 SAMPLE5D_CHUNK = 65536
 #############################################################################
 
-def loss2PSNR(loss):
-    return -10. * torch.log(loss) / torch.log(torch.Tensor([10.]))
+
+def calcPSNR(img1, img2) -> float:
+    return PSNR(img1, img2)
+
+
+def calcSSIM(img1, img2) -> float:
+    return SSIM(img1, img2, channel_axis=2)
+
 
 def test_nerf(
     datasets,
     net: nn.Module,
     loss_func,
-    exp=0.05
+    split="test",
 ):
+    datasets = datasets[split]
     images, poses, focal = datasets["images"], datasets["poses"], datasets["focal"]
     samples, height, width, channel = images.shape
-    # Pass relevant scene parameters, camera parameters, 
+    # Pass relevant scene parameters, camera parameters,
     # geometric model (NeRF) into Volume Renderer
     renderer = render.VolumeRenderer(
         nerf=net,
@@ -76,34 +85,41 @@ def test_nerf(
     )
     if not os.path.exists("./out/other_imgs"):
         os.mkdir("./out/other_imgs")
-    print(f"[Log] number of testsets' images: {len(images)}")
     loss_sum = 0.0
     psnr_sum = 0.0
+    ssim_sum = 0.0
+    print(f"[Log] number of {split}sets' images: {len(images)}")
     for data_index in tqdm.trange(0, len(images)):
         image = images[data_index]
         pose = poses[data_index, :3, :4]
-        
+
         # Volume renderer render to obtain predictive rgb (image)
-        # Including ray generation, sample coordinates, positional encoding, 
-        # Hierarchical volume sampling, NeRF(x,d)=(rgb,density), 
+        # Including ray generation, sample coordinates, positional encoding,
+        # Hierarchical volume sampling, NeRF(x,d)=(rgb,density),
         # computation of volume rendering equation
         image_hat = renderer.render_image(pose, use_tqdm=False)
-        image = torch.tensor(image, device=DEVICE)
-        image_hat = torch.tensor(image_hat, device=DEVICE)
+
         render.save_img(
-            image_hat.detach().cpu().numpy(), f"./out/other_imgs/test_{data_index}.png"
+            image_hat, f"./out/other_imgs/{split}_hat_r_{data_index}.png"
         )
-                
+
         # Calculate the loss and psnr
-        loss = loss_func(image, image_hat).detach().cpu()
-        loss_sum += loss.item()
-        psnr_sum += loss2PSNR(loss).item()
-        
+        loss = loss_func(
+            torch.tensor(image),
+            torch.tensor(image_hat)
+        ).detach().item()
+        loss_sum += loss
+        psnr_sum += calcPSNR(image, image_hat)
+        ssim_sum += calcSSIM(image, image_hat)
+
     loss_sum /= len(images)
     psnr_sum /= len(images)
-    print(f"[Test] NeRF avg Loss in testset: {loss_sum}")
-    print(f"[Test] NeRF avg PSNR in testset: {psnr_sum}")
-    
+    ssim_sum /= len(images)
+    print(f"[Test] NeRF avg Loss in {split}set: {loss_sum}")
+    print(f"[Test] NeRF avg PSNR in {split}set: {psnr_sum}")
+    print(f"[Test] NeRF avg SSIM in {split}set: {ssim_sum}")
+
+
 if __name__ == "__main__":
     # get datasets from data_loader module
     datasets = data_loader.load_blender(
@@ -132,7 +148,8 @@ if __name__ == "__main__":
                 net.load_state_dict(torch.load(path))
     # Start testing
     test_nerf(
-        datasets=datasets["test"],
+        datasets=datasets,
         net=net,
-        loss_func=loss_func
+        loss_func=loss_func,
+        split="test"
     )
