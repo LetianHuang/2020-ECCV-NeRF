@@ -132,11 +132,6 @@ class VolumeRenderer:
             ], dim=-1),
             camera2world[:3, :3].t()
         )
-        # rays_d = torch.sum(torch.stack([
-        #     (i - 0.5 * self.width) / self.focal,
-        #     -(j - 0.5 * self.height) / self.focal,
-        #     -torch.ones_like(i, device=self.device)
-        # ], dim=-1)[..., None, :] * camera2world[:3, :3], dim=-1)
         # Camera's World Coordinate
         rays_o = camera2world[:3, -1].expand(rays_d.shape)
         return rays_o, rays_d
