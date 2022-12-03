@@ -97,7 +97,7 @@ $$
 4. 求解体渲染方程。根据步骤3得到的体素，计算点积求解渲染方程，得到图像的像素值以及PDF（对应论文中的**4**，项目中`render.py`模块下`VolumeRenderer`类的`_parse_voxels`方法）
 5. 在光线上重要性采样。根据4得到的PDF在rays上重要性采样，获得 $N_f$ 个样本点（对应论文中的**5.2**，项目中的`render.py`模块下`VolumeRenderer`类的`_hierarchical_sample`方法）
 6. 结合步骤2、5得到的采样点作为几何模型（NeRF fine net）的输入获取体素信息。（对应项目中`render.py`模块下`VolumeRenderer`类的`_voxel_sample5d`方法，该方法调用了`nerf.py`模块的`NeRF`模型的fine_model）
-7. 再此求解体渲染方程。根据步骤6得到的体素，计算点积求解渲染方程，得到图像的像素值，作为实际渲染的图像（对应论文中的**5.2**，项目中`render.py`模块下`VolumeRenderer`类的`_parse_voxels`方法）
+7. 再次求解体渲染方程。根据步骤6得到的体素，计算点积求解渲染方程，得到图像的像素值，作为实际渲染的图像（对应论文中的**5.2**，项目中`render.py`模块下`VolumeRenderer`类的`_parse_voxels`方法）
 
 更多细节见`render.py`模块
 
