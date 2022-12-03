@@ -8,7 +8,7 @@
 
 * 该项目包含2020 ECCV NeRF论文原文及其复现代码，为学习论文以及官方实现后所做，代码中包含相关注释以及个人对论文的理解，仅供参考！
 * 论文主要内容是通过几个角度的照片（或者合成图像）及相机参数重建三维模型，并通过三维模型合成其他视角图像，整个过程是通过深度学习以及体渲染完成的。
-* 超参数采用的官方的超参数，显卡使用论文中**5.3**提到的NVIDIA V100 GPU，数据集使用官方 $lego$ 数据集，且对数据集合 $800\times800\times4$ 的图像做了处理，实际用于训练的是 $400\times400\times3$ 的图像，模型总共训练了 $200000$ 个epoch，总共耗时大约 $8\sim9$ 小时。
+* 超参数采用的官方的超参数，显卡使用论文中**5.3**提到的NVIDIA V100 GPU，数据集使用官方 $Realistic\ Synthetic\ 360^{\circ}\$ 数据集中的 $lego$，且对数据集合 $800\times800\times4$ 的图像做了处理，实际用于训练的是 $400\times400\times3$ 的图像，模型总共训练了 $200000$ 个epoch，总共耗时大约 $8\sim9$ 小时。
 * 根据训练 $200000$ 个epoch得到的模型做体渲染，大约 $7\sim8$ 秒渲染一帧，显然该论文中的模型暂不能用于实时渲染。
 * 复现了论文中**5.1**提到的Positional Encoding用于拟合了训练集图像的高频部分，因此最终做体渲染得到的图像高频部分并未丢失。
 * 辐射场输入中加入了视角方向参数即view directions，对于渲染结果和视角方向强相关的材质（BRDF并非均匀分布，如Specular材质）也能得到很好的渲染结果。
@@ -39,7 +39,7 @@ opencv-python
 
 ## 数据集介绍
 
-数据集为官方提供数据集 $lego$ ，在该项目的`./data/nerf_synthetic/lego/*`目录下；该目录下包含三个文件夹和三个json文件，分别表示训练集`train`、验证集`val`、测试集`test`；json文件中`camera_angle_x`参数表示的是 $fov_x$ ，`file_path`参数表示对应图像所在目录，`transform_matrix`表示相机坐标与世界坐标的坐标变换矩阵，在生成光线做Camera Ray Casting时需要用到。
+数据集为官方提供数据集 $Realistic\ Synthetic\ 360^{\circ}\$ 数据集中的 $lego$ ，在该项目的`./data/nerf_synthetic/lego/*`目录下；该目录下包含三个文件夹和三个json文件，分别表示训练集`train`、验证集`val`、测试集`test`；json文件中`camera_angle_x`参数表示的是 $fov_x$ ，`file_path`参数表示对应图像所在目录，`transform_matrix`表示相机坐标与世界坐标的坐标变换矩阵，在生成光线做Camera Ray Casting时需要用到。
 
 为了提高模型训练速率以及防止显存不足，对原始数据集做了一定的修改，即将 $800\times800\times4$ 的图像resize成了 $400\times400\times3$ 的图像。
 
