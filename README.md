@@ -24,10 +24,10 @@
 * cudnn版本：8.2.4
 
 其他Python模块依赖
-```python
-matplotlib
+```
 tqdm
 opencv-python
+scikit-image==0.19.3
 ```
 
 ## 3D模型可视化
@@ -148,8 +148,8 @@ $$
 </tr>
 </table>
 
-测试集上模型的平均损失LOSS和平均峰值信噪比PSNR如下：
+ $Realistic\ Synthetic\ 360^{\circ}\ lego$ 数据集上模型的LOSS、PSNR、SSIM如下：
 
-|  Data Set   | Number Of Images  |  LOSS   | PSNR  |
-|  :----:  | :----:  |  :----:  | :----:  |
-| $Realistic\ Synthetic\ 360^{\circ}\ lego$  | $200$ | $7.576\times{10^{-4}}$  | $31.43$ |
+|  Data Set   | Number Of Images  |  LOSS   | PSNR  | SSIM |
+|  :----:  | :----:  |  :----:  | :----:  | :----:  |
+| Test Set  | $200$ | $7.558\times{10^{-4}}$  | $31.44$ | $0.975$ |
