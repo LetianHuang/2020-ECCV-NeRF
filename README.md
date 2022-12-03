@@ -152,4 +152,4 @@ $$
 
 |  Data Set   | Number Of Images  |  LOSS   | PSNR  |
 |  :----:  | :----:  |  :----:  | :----:  |
-| Test Set | $200$ | $7.576\times{10^{-4}}$  | $31.43$ |
+| $Realistic\ Synthetic\ 360^{\circ}\ lego$  | $200$ | $7.576\times{10^{-4}}$  | $31.43$ |
