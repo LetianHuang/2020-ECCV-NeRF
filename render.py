@@ -50,6 +50,7 @@ def get_screen_batch(
     return coords
 
 
+
 def save_img(img: np.ndarray, path):
     """
     Save Image Using OpenCV
@@ -241,25 +242,28 @@ class VolumeRenderer:
             t_vals: tensor [num_rays, num_samples + num_isamples] t of sampling and hierarchical sampling
         """
         rays_o, rays_d = rays
-        t_vals_mid = (t_vals[..., :-1] + t_vals[..., 1:]) * 0.5
+        t_vals_mid = (t_vals[..., :-1] + t_vals[..., 1:]) * 0.5 
+        # [num_rays, num_samples - 1] == cdf_map.shape
 
-        u = torch.rand((*cdf_map.shape[:-1], self.num_isamples), device=self.device).contiguous()
+        u = torch.rand((*cdf_map.shape[:-1], self.num_isamples), device=self.device).contiguous() # [num_rays, num_isamples]
+        
         index = torch.searchsorted(cdf_map, u, right=True) # [num_rays, num_isamples] find > u
         index = torch.stack((
             torch.max(torch.zeros_like(index, device=self.device), index - 1), 
             torch.min(torch.full_like(index, fill_value=(cdf_map.shape[-1] - 1) * 1.0, device=self.device), index) 
-            ), dim=-1)
-        shape_m = [index.shape[0], index.shape[1], cdf_map.shape[-1]]
-        cdf_map_gather = torch.gather(cdf_map.unsqueeze(1).expand(shape_m), dim=2, index=index)
-        t_vals_gather = torch.gather(t_vals_mid.unsqueeze(1).expand(shape_m), dim=2, index=index)
+            ), dim=-1) # [num_rays, num_isamples, 2]
+        
+        shape_m = [index.shape[0], index.shape[1], cdf_map.shape[-1]] # [num_rays, num_isamples, num_samples - 1]
+        cdf_map_gather = torch.gather(cdf_map.unsqueeze(1).expand(shape_m), dim=2, index=index) # [num_rays, num_isamples, 2]
+        t_vals_gather = torch.gather(t_vals_mid.unsqueeze(1).expand(shape_m), dim=2, index=index) # [num_rays, num_isamples, 2]
+        
         denom = cdf_map_gather[..., 1] - cdf_map_gather[..., 0]
-        denom = torch.where(denom < 1e-5, torch.ones_like(denom, device=self.device), denom)
-        t_vals_fine = (t_vals_gather[..., 0] + (u - cdf_map_gather[..., 0]) / denom * (t_vals_gather[..., 1]-t_vals_gather[..., 0])).detach()
+        denom = torch.where(denom < 1e-5, torch.ones_like(denom, device=self.device), denom) # [num_rays, num_isamples]
+        
+        t_vals_fine = torch.lerp(t_vals_gather[..., 0], t_vals_gather[..., 1], (u - cdf_map_gather[..., 0]) / denom).detach()
+        t_vals, _ = torch.sort(torch.cat((t_vals, t_vals_fine), dim=-1), dim=-1)
 
-        t_vals, _ = torch.sort(torch.cat([t_vals, t_vals_fine], -1), -1)
-
-        pos_locs = rays_o[..., None, :] + rays_d[..., None, :] * t_vals[..., :, None]
-        # [num_rays, num_samples + num_isamples, 3]
+        pos_locs = rays_o[..., None, :] + rays_d[..., None, :] * t_vals[..., :, None] # [num_rays, num_samples + num_isamples, 3]
 
         return pos_locs, t_vals
 
@@ -340,7 +344,7 @@ class VolumeRenderer:
 
         rays_o, rays_d = rays_o.reshape(-1, 3), rays_d.reshape(-1, 3)
         rays_d = rays_d / torch.norm(rays_d, dim=-1, keepdim=True)
-
+        
         if self.ray_chunk is None or self.ray_chunk <= 1:
             return self._cast_rays((rays_o, rays_d))
 
